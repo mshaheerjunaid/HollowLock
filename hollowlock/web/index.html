@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="hl-token" content="__HL_TOKEN__">
+<title>HollowLock</title>
+<link rel="stylesheet" href="/style.css">
+<script src="/app.js" defer></script>
+</head>
+<body class="state-idle">
+  <div class="sheet-grid" aria-hidden="true"></div>
+
+  <h1 class="wordmark">HollowLock</h1>
+
+  <main class="console">
+    <div class="lock" id="lock" title="scan again">
+      <div class="disc"><img id="lockImg" src="/logo-icon.png" alt="HollowLock"></div>
+      <svg class="ring" viewBox="0 0 100 100" aria-hidden="true">
+        <circle class="ring-track" cx="50" cy="50" r="47"/>
+        <circle class="ring-arc" id="arc" cx="50" cy="50" r="47"/>
+      </svg>
+    </div>
+
+    <div class="status">
+      <div class="dc-label" id="dcLabel">Ready</div>
+      <div class="dc-score" id="dcScore"></div>
+    </div>
+
+    <div class="control">
+      <div class="field">
+        <span class="field-tag">Target</span>
+        <input id="domain" type="text" inputmode="url" autocomplete="off"
+               spellcheck="false" placeholder="https://cloudflare.com"
+               aria-label="domain to scan">
+        <button id="run">Scan</button>
+      </div>
+      <p class="err" id="err"></p>
+    </div>
+
+    <div class="verdict-line">
+      <button class="again" id="again">Scan Another</button>
+    </div>
+  </main>
+
+  <section class="readout" id="readout" aria-live="polite"></section>
+</body>
+</html>
