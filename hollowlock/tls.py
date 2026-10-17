@@ -1,3 +1,4 @@
+import ipaddress
 import os
 import socket
 import struct
@@ -96,14 +97,13 @@ def build_client_hello(hostname, groups, shares=(), alpn=None, tls12=False):
     """groups is supported_groups in order, shares the groups we send a key for
     (empty means an empty key_share, which forces an HRR). tls12 adds the
     1.2 fallback a browser offers."""
-    sni = _block(2, b"\x00" + _block(2, hostname.encode("idna")))
     sg = _block(2, b"".join(_u16(g) for g in groups))
     sa = _block(2, b"".join(_u16(a) for a in SIG_ALGS))
     sv = _block(1, _u16(TLS13) + (_u16(TLS12) if tls12 else b""))
     pskm = _block(1, b"\x01")
     ks = _block(2, b"".join(_u16(g) + _block(2, share_for(g)) for g in shares))
 
-    exts = _ext(0x0000, sni)
+    exts = b"" if _is_ip(hostname) else _ext(0x0000, _block(2, b"\x00" + _block(2, hostname.encode("idna"))))
     if tls12:
         exts += _ext(0x0017, b"") + _ext(0xFF01, b"\x00")   # ems, renegotiation_info
     exts += _ext(0x000A, sg)
@@ -119,6 +119,15 @@ def build_client_hello(hostname, groups, shares=(), alpn=None, tls12=False):
             + _block(2, b"".join(_u16(c) for c in suites))
             + _block(1, b"\x00") + _block(2, exts))
     return b"\x16\x03\x01" + _block(2, b"\x01" + _block(3, body))
+
+
+def _is_ip(host):
+    # sni must not carry an ip literal (rfc 6066), so a bare address goes without it
+    try:
+        ipaddress.ip_address(host)
+        return True
+    except ValueError:
+        return False
 
 
 def _recv_exact(sock, n):

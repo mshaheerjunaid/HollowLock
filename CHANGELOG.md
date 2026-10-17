@@ -81,6 +81,10 @@ X25519MLKEM768 could be called Partial. Both are fixed below.
   quietly reporting "No".
 - Only one dashboard scan runs at a time, and the API token is compared in
   constant time.
+- The baseline waits at most three seconds for a HEAD reply, so a server that
+  never answers HEAD no longer stalls a scan for the full timeout.
+- A target given as a bare IP address is probed without SNI, as RFC 6066
+  requires, instead of putting the address into the server name.
 
 ### Project
 
@@ -88,7 +92,8 @@ X25519MLKEM768 could be called Partial. Both are fixed below.
   package version is 2.0.0.
 - A pytest suite covers the hello builder, the hybrid share layout, parsing,
   every verdict rule, signing and the CBOM.
-- `kyber-py` is a new runtime dependency.
+- `kyber-py` is a new runtime dependency, and `cryptography` 42 or later is
+  required because the certificate reader uses its timezone-aware date API.
 
 ## 0.1.0, 9 September 2026
 

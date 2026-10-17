@@ -43,6 +43,13 @@ def test_browser_like_hello():
     assert 0xC02F in suites and 0x1301 in suites
 
 
+def test_no_sni_for_ip_literal():
+    _, exts = parse_client_hello(tls.build_client_hello("203.0.113.7", [0x001D]))
+    assert 0x0000 not in exts
+    _, exts = parse_client_hello(tls.build_client_hello("example.com", [0x001D]))
+    assert 0x0000 in exts
+
+
 def test_hybrid_share_layouts():
     assert len(tls.share_for(0x11EC)) == 1184 + 32
     p256 = tls.share_for(0x11EB)

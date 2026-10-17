@@ -7,7 +7,7 @@ requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Muhammad Shaheer Bin Junaid" }]
 keywords = ["post-quantum", "tls", "mlkem", "mldsa", "pqc", "cbom", "crypto-agility"]
-dependencies = ["cryptography>=41", "dilithium-py>=1.0", "kyber-py>=1.0", "reportlab>=4.0"]
+dependencies = ["cryptography>=42", "dilithium-py>=1.0", "kyber-py>=1.0", "reportlab>=4.0"]
 
 [project.optional-dependencies]
 dev = ["pytest>=7"]

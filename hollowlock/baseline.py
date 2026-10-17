@@ -10,6 +10,7 @@ from .security import PROBE_TIMEOUT
 
 USER_AGENT = "HollowLock/2.0 (post-quantum TLS research; +https://github.com/mshaheerjunaid/HollowLock)"
 PQ_CERT_HINTS = ("ml-dsa", "dilithium", "slh-dsa", "sphincs", "falcon")
+HEAD_WAIT = 3.0
 
 
 def _ctx(max_12=False):
@@ -105,8 +106,9 @@ def _name(n):
 
 
 def _http_head(s, hostname, out):
-    # HEAD once, pull banner / hsts / h3
+    # HEAD once, pull banner / hsts / h3. the banner is cosmetic, so don't wait long for it
     try:
+        s.settimeout(min(s.gettimeout() or HEAD_WAIT, HEAD_WAIT))
         s.sendall((f"HEAD / HTTP/1.1\r\nHost: {hostname}\r\n"
                    f"User-Agent: {USER_AGENT}\r\nConnection: close\r\n\r\n").encode())
         data = s.recv(4096).decode("latin-1", "ignore")
