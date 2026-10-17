@@ -1,10 +1,11 @@
+import hmac
 import json
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from . import engine, pdf_report
+from . import crypto, engine, pdf_report
 from .security import (BlockedTarget, InvalidDomain, MAX_BODY, MAX_REPORT,
                        RATE_MIN_INTERVAL, new_token)
 
@@ -34,12 +35,15 @@ class _Gate:
     # rate limit + single flight, so nothing hammers the network
     def __init__(self):
         self._lock = threading.Lock()
+        self.busy = threading.Lock()
         self._last = 0.0
 
     def allow(self):
         with self._lock:
             now = time.monotonic()
             if now - self._last < RATE_MIN_INTERVAL:
+                return False
+            if not self.busy.acquire(blocking=False):
                 return False
             self._last = now
             return True
@@ -99,39 +103,59 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(404, b'{"error":"not found"}')
         if not self._local_only():
             return self._send(403, b'{"error":"forbidden origin"}')
-        if self.headers.get("X-HollowLock-Token") != TOKEN:
+        if not hmac.compare_digest(self.headers.get("X-HollowLock-Token", ""), TOKEN):
             return self._send(403, b'{"error":"bad token"}')
         if path == "/api/report.pdf":
             return self._pdf()
         if not _gate.allow():
             return self._send(429, b'{"error":"slow down"}')
 
-        n = int(self.headers.get("Content-Length", 0) or 0)
+        try:
+            return self._scan()
+        finally:
+            _gate.busy.release()
+
+    def _scan(self):
+        n = _length(self.headers)
         if n <= 0 or n > MAX_BODY:
             return self._send(400, b'{"error":"bad request"}')
         try:
             domain = str(json.loads(self.rfile.read(n)).get("domain", ""))
-        except Exception:
+        except (ValueError, AttributeError):
             return self._send(400, b'{"error":"bad json"}')
 
         try:
-            rep = engine.scan(domain)
-        except InvalidDomain as e:
+            rep = engine.scan(domain, mode="fast")
+        except InvalidDomain:
             return self._send(400, json.dumps({"error": "Invalid Domain"}).encode())
         except BlockedTarget as e:
-            return self._send(400, json.dumps({"error": f"blocked: {e}"}).encode())
+            return self._send(400, json.dumps({"error": f"Blocked, {e}"}).encode())
         except Exception as e:
-            return self._send(500, json.dumps({"error": f"scan failed: {e}"}).encode())
-        self._send(200, json.dumps(rep).encode())
+            return self._send(500, json.dumps({"error": f"Scan failed, {e}"}).encode())
+
+        # the exact text that was signed goes back too, so downloads and the
+        # pdf round trip never re-serialise it in the browser
+        ok, why = crypto.check(rep, crypto.public_key())
+        out = {"report": rep, "signed_json": json.dumps(rep, indent=2),
+               "verification": {"ok": ok, "detail": why, "key": "local",
+                                "fingerprint": crypto.fingerprint(crypto.public_key()),
+                                "digest": crypto.digest(rep)}}
+        self._send(200, json.dumps(out).encode())
 
 
     def _pdf(self):
-        n = int(self.headers.get("Content-Length", 0) or 0)
+        n = _length(self.headers)
         if n <= 0 or n > MAX_REPORT:
             return self._send(400, b'{"error":"bad request"}')
         try:
             report = json.loads(self.rfile.read(n))
-            pdf = pdf_report.build(report, str(WEB / "logo-dark.png"))
+        except ValueError:
+            return self._send(400, b'{"error":"bad json"}')
+        # verify against this machine's key before rendering anything
+        ok, why = crypto.check(report, crypto.public_key())
+        try:
+            pdf = pdf_report.build(report, str(WEB / "logo-dark.png"), verified=ok,
+                                   verify_detail=why, digest=crypto.digest(report))
         except Exception as e:
             return self._send(500, json.dumps({"error": f"pdf failed: {e}"}).encode())
         self.send_response(200)
@@ -142,6 +166,13 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header(k, v)
         self.end_headers()
         self.wfile.write(pdf)
+
+
+def _length(headers):
+    try:
+        return int(headers.get("Content-Length", 0) or 0)
+    except ValueError:
+        return -1
 
 
 def make_server(port=8721):
