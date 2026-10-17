@@ -1,13 +1,19 @@
 [project]
 name = "hollowlock"
-version = "0.1.0"
+version = "2.0.0"
 description = "See whether a site's post-quantum TLS protection is real or hollow."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Muhammad Shaheer Bin Junaid" }]
 keywords = ["post-quantum", "tls", "mlkem", "mldsa", "pqc", "cbom", "crypto-agility"]
-dependencies = ["cryptography>=41", "dilithium-py>=1.0", "reportlab>=4.0"]
+dependencies = ["cryptography>=41", "dilithium-py>=1.0", "kyber-py>=1.0", "reportlab>=4.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.urls]
+Repository = "https://github.com/mshaheerjunaid/HollowLock"
 
 [project.scripts]
 hollowlock = "hollowlock.__main__:main"
@@ -17,6 +23,9 @@ packages = ["hollowlock"]
 
 [tool.setuptools.package-data]
 hollowlock = ["web/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [build-system]
 requires = ["setuptools>=68"]

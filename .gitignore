@@ -4,3 +4,18 @@ build/
 dist/
 *.egg-info/
 .venv/
+.pytest_cache/
+
+# hollowlock signing keys, never commit these
+*.key
+hollowlock_mldsa65*
+*_private*
+
+# local scan output
+results.jsonl
+run_meta.json
+run.log
+manifest.json
+hollowlock-*.json
+hollowlock-*.pdf
+runs/
