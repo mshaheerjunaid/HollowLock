@@ -202,4 +202,6 @@ what changed since version 1 is in [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE). The Space Grotesk and Space Mono fonts bundled with
+the dashboard keep their own licence, the SIL Open Font License 1.1, and its text
+is in [LICENSE-FONTS.txt](LICENSE-FONTS.txt).

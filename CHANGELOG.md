@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Added `LICENSE-FONTS.txt` with the SIL Open Font License 1.1 text for the
+  bundled Space Grotesk and Space Mono fonts, which had shipped without it since
+  0.1.0. It is also packaged into the wheel. No code changed, so scan results are
+  the same as 2.0.0.
+
 ## 2.0.0, 17 October 2026
 
 Version 2 rebuilds how HollowLock measures a server, so its numbers can be
